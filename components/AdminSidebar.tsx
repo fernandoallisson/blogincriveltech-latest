@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { validateStoredSession, type AuthUser } from '@/lib/auth';
+import { useAdminAuth } from '@/components/AdminAuthContext';
 import { supabase } from '@/lib/supabase';
 import Logo from './Logo';
 import Icon from './Icon';
@@ -44,11 +44,7 @@ function NavItem({ item, active }: { item: (typeof contentItems)[number]; active
 
 export default function AdminSidebar({ active = 'dashboard' }: AdminSidebarProps) {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
-
-  useEffect(() => {
-    validateStoredSession().then((u) => setUser(u));
-  }, []);
+  const { user } = useAdminAuth();
 
   async function handleLogout() {
     await supabase.auth.signOut();

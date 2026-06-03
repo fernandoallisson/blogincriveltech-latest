@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
-import { validateStoredSession, type AuthUser } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { AdminAuthProvider, useAdminAuth } from '@/components/AdminAuthContext';
 
 function LoadingState() {
   return (
@@ -17,65 +16,39 @@ function LoadingState() {
   );
 }
 
-export default function AdminAuthGate({ children }: { children: React.ReactNode }) {
+function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const isLoginPage = pathname === '/admin/login';
-  const [checking, setChecking] = useState(true);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const { user, loading } = useAdminAuth();
 
   useEffect(() => {
-    let active = true;
+    if (loading || isLoginPage) return;
 
-    async function checkSession() {
-      if (isLoginPage) {
-        setChecking(false);
-        return;
-      }
-
-      try {
-        const currentUser = await validateStoredSession();
-        if (!active) return;
-
-        if (!currentUser) {
-          router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
-          return;
-        }
-
-        if (!canAccessAdminPath(currentUser, pathname)) {
-          router.replace('/admin/dashboard');
-          return;
-        }
-
-        setUser(currentUser);
-      } catch {
-        if (!active) return;
-        router.replace('/admin/login');
-      } finally {
-        if (active) setChecking(false);
-      }
+    if (!user) {
+      router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
+      return;
     }
 
-    checkSession();
+    if (!canAccessAdminPath(user, pathname)) {
+      router.replace('/admin/dashboard');
+    }
+  }, [loading, user, isLoginPage, pathname, router]);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT' && !isLoginPage) {
-        router.replace('/admin/login');
-      }
-    });
-
-    return () => {
-      active = false;
-      subscription.unsubscribe();
-    };
-  }, [isLoginPage, pathname, router]);
-
-  if (checking) return <LoadingState />;
+  if (loading) return <LoadingState />;
   if (!isLoginPage && !user) return <LoadingState />;
   return <>{children}</>;
 }
 
-function canAccessAdminPath(user: AuthUser, pathname: string) {
+export default function AdminAuthGate({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminAuthProvider>
+      <AuthGuard>{children}</AuthGuard>
+    </AdminAuthProvider>
+  );
+}
+
+function canAccessAdminPath(user: { role: string }, pathname: string) {
   if (user.role === 'admin') return true;
   return !['/admin/authors', '/admin/theming', '/admin/settings'].some((path) => pathname.startsWith(path));
 }
