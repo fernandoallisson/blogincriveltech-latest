@@ -41,30 +41,33 @@ export async function fetchUsers(): Promise<ApiUser[]> {
 }
 
 export async function createUser(payload: { name: string; email: string; password: string; role?: ApiUser['role'] }): Promise<ApiUser> {
-  const { data: existing } = await supabase.auth.getSession();
-  if (!existing.session) throw new Error('Não autenticado');
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) throw new Error('Não autenticado');
 
-  const { data, error } = await supabase.auth.admin?.createUser({
-    email: payload.email,
-    password: payload.password,
-    user_metadata: { name: payload.name, role: payload.role ?? 'author' },
-    email_confirm: true,
-  }) as { data: { user: { id: string; email: string; created_at: string } } | null; error: Error | null };
-
-  if (error || !data?.user) throw new Error('Falha ao criar autor');
-
-  await supabase.from('user_profiles').upsert({
-    id: data.user.id,
-    name: payload.name,
-    role: payload.role ?? 'author',
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const res = await fetch(`${supabaseUrl}/functions/v1/create-admin-user`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${sessionData.session.access_token}`,
+    },
+    body: JSON.stringify({
+      name: payload.name,
+      email: payload.email,
+      password: payload.password,
+      role: payload.role ?? 'author',
+    }),
   });
 
+  const result = await res.json();
+  if (!res.ok || result.error) throw new Error(result.error ?? 'Falha ao criar autor');
+
   return {
-    id: data.user.id,
+    id: result.id,
     name: payload.name,
     email: payload.email,
     role: payload.role ?? 'author',
-    created_at: data.user.created_at,
-    updated_at: data.user.created_at,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 }
