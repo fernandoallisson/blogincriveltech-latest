@@ -10,7 +10,7 @@ import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import { AdminGrid, AdminRow } from '@/features/admin/shared/AdminGrid';
 import { createPromoCard, deletePromoCard, fetchPosts, fetchPromoCardMetrics, fetchPromoCards, fetchUsers, updatePromoCard, uploadMedia, type ApiPost, type ApiPromoCard, type ApiUser, type DashboardPeriod, type PromoCardMetrics, type PromoCardPayload } from '@/lib/api';
-import { getStoredUser } from '@/lib/auth';
+import { validateStoredSession } from '@/lib/auth';
 import { compressUploadImage } from '@/lib/imageCompression';
 
 type PromoForm = {
@@ -23,7 +23,7 @@ type PromoForm = {
   background_color: string;
   text_color: string;
   cta_color: string;
-  author_id: number;
+  author_id: string;
   post_ids: string[];
   file: File | null;
 };
@@ -38,7 +38,7 @@ const emptyForm: PromoForm = {
   background_color: '#101828',
   text_color: '#FFFFFF',
   cta_color: '#5CE1E6',
-  author_id: 1,
+  author_id: '',
   post_ids: [],
   file: null,
 };
@@ -52,14 +52,14 @@ const periodOptions: Array<{ value: DashboardPeriod; label: string }> = [
 ];
 
 export default function AdminPromoCardsPage() {
-  const currentUser = getStoredUser();
+  const [currentUser, setCurrentUser] = useState<{ id: string; role: string; name?: string; email?: string } | null>(null);
   const isAdmin = currentUser?.role === 'admin';
   const [items, setItems] = useState<ApiPromoCard[]>([]);
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [users, setUsers] = useState<ApiUser[]>([]);
-  const [form, setForm] = useState<PromoForm>({ ...emptyForm, author_id: currentUser?.id || 1 });
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [form, setForm] = useState<PromoForm>(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<PromoCardMetrics | null>(null);
   const [period, setPeriod] = useState<DashboardPeriod>('30d');
   const [message, setMessage] = useState('');
@@ -69,7 +69,9 @@ export default function AdminPromoCardsPage() {
   const metricsRef = useRef<HTMLDivElement | null>(null);
 
   async function load() {
-    const [cards, postRows, userRows] = await Promise.all([fetchPromoCards(), fetchPosts(), isAdmin ? fetchUsers().catch(() => []) : Promise.resolve([])]);
+    const user = await validateStoredSession();
+    setCurrentUser(user);
+    const [cards, postRows, userRows] = await Promise.all([fetchPromoCards(), fetchPosts(), user?.role === 'admin' ? fetchUsers().catch(() => []) : Promise.resolve([])]);
     setItems(cards);
     setPosts(postRows);
     setUsers(userRows);
@@ -127,7 +129,7 @@ export default function AdminPromoCardsPage() {
         text_color: form.text_color,
         cta_color: form.cta_color,
         author_id: form.author_id,
-        post_ids: form.post_ids.map(Number),
+        post_ids: form.post_ids,
       };
 
       if (editingId) await updatePromoCard(editingId, payload);
@@ -138,7 +140,7 @@ export default function AdminPromoCardsPage() {
 
       setMessage(editingId ? 'Card atualizado.' : 'Card criado.');
       setEditingId(null);
-      setForm({ ...emptyForm, author_id: currentUser?.id || 1 });
+      setForm({ ...emptyForm, author_id: currentUser?.id || '' });
       await load();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Falha ao salvar card.');
@@ -181,7 +183,7 @@ export default function AdminPromoCardsPage() {
       text_color: item.text_color || '#FFFFFF',
       cta_color: item.cta_color || '#5CE1E6',
       author_id: item.author_id,
-      post_ids: item.posts?.map((post) => String(post.id)) || [],
+      post_ids: item.posts?.map((post) => post.id) || [],
       file: null,
     });
   }
@@ -209,7 +211,7 @@ export default function AdminPromoCardsPage() {
   }
 
   return (
-    <AdminPageShell active="promos" title="Propagandas" eyebrow={`${items.length} cards`} actions={<Button icon="plus" onClick={() => { setEditingId(null); setForm({ ...emptyForm, author_id: currentUser?.id || 1 }); }}>Novo card</Button>}>
+    <AdminPageShell active="promos" title="Propagandas" eyebrow={`${items.length} cards`} actions={<Button icon="plus" onClick={() => { setEditingId(null); setForm({ ...emptyForm, author_id: currentUser?.id || '' }); }}>Novo card</Button>}>
       <AdminGrid className="lg:grid-cols-[390px_minmax(0,1fr)]">
         <Card className="p-4">
           <form onSubmit={save} className="flex flex-col gap-3">
@@ -221,7 +223,7 @@ export default function AdminPromoCardsPage() {
             <Input label="Link do CTA" value={form.cta_url} onChange={(e) => setForm({ ...form, cta_url: e.target.value })} />
             <PostPicker posts={posts} selectedIds={form.post_ids} onChange={(postIds) => setForm({ ...form, post_ids: postIds })} />
             <Select label="Status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as PromoForm['status'] })} options={[{ value: 'inactive', label: 'Inativo' }, { value: 'active', label: 'Ativo' }]} />
-            {isAdmin && <Select label="Autor" value={String(form.author_id)} onChange={(e) => setForm({ ...form, author_id: Number(e.target.value) })} options={(users.length ? users : currentUser ? [{ id: currentUser.id, name: currentUser.name || currentUser.email } as ApiUser] : []).map((user) => ({ value: String(user.id), label: user.name }))} />}
+            {isAdmin && <Select label="Autor" value={form.author_id} onChange={(e) => setForm({ ...form, author_id: e.target.value })} options={(users.length ? users : currentUser ? [{ id: currentUser.id, name: currentUser.name || currentUser.email } as ApiUser] : []).map((user) => ({ value: user.id, label: user.name }))} />}
             <ColorFields form={form} onChange={setForm} />
             {message && <div className={`text-xs ${message.includes('Falha') ? 'text-error' : 'text-success'}`}>{message}</div>}
             <Button type="submit" full disabled={isProcessingImage || isSaving || !form.title}>{isSaving ? 'Salvando...' : editingId ? 'Atualizar card' : 'Criar card'}</Button>
@@ -285,7 +287,7 @@ function PostPicker({ posts, selectedIds, onChange }: { posts: ApiPost[]; select
       <div className="mt-1 text-xs leading-5 text-subtle">Sem seleção, o card aparece como global. Selecione um ou mais posts para limitar a exibição.</div>
       <div className="max-h-[180px] space-y-1.5 overflow-auto pr-1">
         {posts.map((post) => {
-          const postId = String(post.id);
+        const postId = post.id;
           return (
             <label key={post.id} className="flex min-w-0 cursor-pointer items-center gap-2 rounded-md border border-border bg-surface/40 px-2.5 py-2 text-sm text-text">
               <input type="checkbox" checked={selectedIds.includes(postId)} onChange={() => toggle(postId)} className="shrink-0" />
@@ -324,7 +326,7 @@ function PromoPreview({ card, previewImageUrl }: { card: PromoForm; previewImage
   );
 }
 
-function CardsTable({ items, selectedId, onSelect, onDashboard, onEdit, onToggle, onDelete }: { items: ApiPromoCard[]; selectedId: number | null; onSelect: (id: number) => void; onDashboard: (item: ApiPromoCard) => void; onEdit: (item: ApiPromoCard) => void; onToggle: (item: ApiPromoCard) => void; onDelete: (item: ApiPromoCard) => void }) {
+function CardsTable({ items, selectedId, onSelect, onDashboard, onEdit, onToggle, onDelete }: { items: ApiPromoCard[]; selectedId: string | null; onSelect: (id: string) => void; onDashboard: (item: ApiPromoCard) => void; onEdit: (item: ApiPromoCard) => void; onToggle: (item: ApiPromoCard) => void; onDelete: (item: ApiPromoCard) => void }) {
   return (
     <Card padding={0} className="overflow-hidden">
       {items.map((item) => (

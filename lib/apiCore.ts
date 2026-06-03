@@ -1,23 +1,13 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://api-blog.incrivel.tech/api/';
-const ADMIN_TOKEN_KEY = process.env.NEXT_PUBLIC_ADMIN_TOKEN_KEY || process.env.ADMIN_TOKEN_KEY || 'blog-incrivel-admin-token';
-
-function getAdminToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem(ADMIN_TOKEN_KEY);
-}
+// Legacy stub — actual data access is now handled directly via Supabase client in each api*.ts file.
+// Kept for any remaining imports that may still reference these symbols.
+export const API_URL = '';
 
 export function adminHeaders(): HeadersInit {
-  return {
-    'Content-Type': 'application/json',
-    ...adminAuthHeaders(),
-  };
+  return { 'Content-Type': 'application/json' };
 }
 
 export function adminAuthHeaders(): HeadersInit {
-  const token = getAdminToken();
-  return {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+  return {};
 }
 
 export async function readJsonOrThrow<T>(res: Response, message: string): Promise<T> {
@@ -27,7 +17,7 @@ export async function readJsonOrThrow<T>(res: Response, message: string): Promis
       const data = await res.json();
       detail = data?.error ? `: ${data.error}` : '';
     } catch {
-      // Keep the original message when the API returns an empty body.
+      // ignore
     }
     throw new Error(`${message}${detail}`);
   }

@@ -12,7 +12,7 @@ import { AdminGrid, AdminRow } from '@/features/admin/shared/AdminGrid';
 export default function AdminSettingsPage() {
   const [items, setItems] = useState<ApiSetting[]>([]);
   const [form, setForm] = useState({ key: '', value: '' });
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   async function load() { setItems(await fetchSettings()); }
   useEffect(() => { load(); }, []);
   async function save(e: React.FormEvent<HTMLFormElement>) {

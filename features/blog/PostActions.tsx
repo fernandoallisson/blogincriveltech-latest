@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import Icon from '@/components/Icon';
@@ -64,7 +64,7 @@ export function ShareCard({ onShare, readTime }: { onShare: () => void; readTime
   );
 }
 
-export function PromoCardList({ cards, postId }: { cards: ApiPromoCard[]; postId: number }) {
+export function PromoCardList({ cards, postId }: { cards: ApiPromoCard[]; postId: string }) {
   if (cards.length === 0) return null;
   return (
     <div className="space-y-4">
@@ -73,7 +73,7 @@ export function PromoCardList({ cards, postId }: { cards: ApiPromoCard[]; postId
   );
 }
 
-function PublicPromoCard({ card, postId }: { card: ApiPromoCard; postId: number }) {
+function PublicPromoCard({ card, postId }: { card: ApiPromoCard; postId: string }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const trackedRef = useRef(false);
 

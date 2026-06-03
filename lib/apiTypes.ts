@@ -1,5 +1,5 @@
 export interface ApiPost {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   summary: string;
@@ -7,12 +7,12 @@ export interface ApiPost {
   cover_image: string | null;
   image_position: ImagePosition;
   status: PostStatus;
-  author_id: number;
+  author_id: string;
   author_name: string;
-  category_id?: number | null;
+  category_id?: string | null;
   category_name: string | null;
   category_slug: string | null;
-  media_id?: number | null;
+  media_id?: string | null;
   media_filename?: string | null;
   scheduled_at?: string | null;
   schedule_status?: 'pending' | 'published' | 'cancelled' | null;
@@ -25,7 +25,7 @@ export interface ApiPost {
 }
 
 export interface ApiCategory {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   description: string | null;
@@ -34,7 +34,7 @@ export interface ApiCategory {
 }
 
 export interface ApiTag {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   created_at: string;
@@ -42,9 +42,9 @@ export interface ApiTag {
 }
 
 export interface ApiComment {
-  id: number;
-  post_id: number;
-  user_id: number | null;
+  id: string;
+  post_id: string;
+  user_id: string | null;
   name: string;
   email: string;
   content: string;
@@ -54,7 +54,7 @@ export interface ApiComment {
 }
 
 export interface ApiSetting {
-  id: number;
+  id: string;
   key: string;
   value: string;
   created_at: string;
@@ -62,14 +62,15 @@ export interface ApiSetting {
 }
 
 export interface ApiMedia {
-  id: number;
+  id: string;
   filename: string;
   url: string;
+  storage_path?: string | null;
   type: string | null;
   size: number | null;
-  uploaded_by: number | null;
+  uploaded_by: string | null;
   uploaded_by_name?: string | null;
-  post_id?: number | null;
+  post_id?: string | null;
   post_title?: string | null;
   post_slug?: string | null;
   created_at: string;
@@ -77,11 +78,11 @@ export interface ApiMedia {
 
 export interface ApiAuthResponse {
   token: string;
-  user: { id: number; name: string; email: string; role: string };
+  user: { id: string; name: string; email: string; role: string };
 }
 
 export interface ApiUser {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: 'admin' | 'author' | 'user';
@@ -115,13 +116,13 @@ export interface DashboardMetrics {
   };
   postStatus: Array<{ status: PostStatus; total: number }>;
   activity: Array<{ date: string; views: number; likes: number; comments: number; posts: number }>;
-  topPosts: Array<{ id: number; title: string; slug: string; status: PostStatus; author_id: number; author_name: string; views: number; likes: number }>;
+  topPosts: Array<{ id: string; title: string; slug: string; status: PostStatus; author_id: string; author_name: string; views: number; likes: number }>;
   categoryBreakdown: Array<{ name: string; posts: number }>;
-  recentPosts: Array<{ id: number; title: string; slug: string; status: PostStatus; category_name: string | null; created_at: string; published_at: string | null; views: number; likes: number }>;
+  recentPosts: Array<{ id: string; title: string; slug: string; status: PostStatus; category_name: string | null; created_at: string; published_at: string | null; views: number; likes: number }>;
 }
 
 export interface ApiPromoCard {
-  id: number;
+  id: string;
   title: string;
   description: string | null;
   image_url: string | null;
@@ -131,12 +132,12 @@ export interface ApiPromoCard {
   background_color: string;
   text_color: string;
   cta_color: string;
-  author_id: number;
+  author_id: string;
   author_name?: string | null;
   impressions?: number;
   clicks?: number;
   ctr?: number;
-  posts?: Array<{ id: number; title: string; slug: string }>;
+  posts?: Array<{ id: string; title: string; slug: string }>;
   created_at: string;
   updated_at: string;
 }
@@ -151,8 +152,8 @@ export type PromoCardPayload = {
   background_color?: string;
   text_color?: string;
   cta_color?: string;
-  author_id?: number;
-  post_ids?: number[];
+  author_id?: string;
+  post_ids?: string[];
 };
 
 export interface PromoCardMetrics {
@@ -163,7 +164,7 @@ export interface PromoCardMetrics {
     ctr: number;
   };
   daily: Array<{ date: string; impressions: number; clicks: number }>;
-  posts: Array<{ id: number | null; title: string; slug: string | null; impressions: number; clicks: number }>;
+  posts: Array<{ id: string | null; title: string; slug: string | null; impressions: number; clicks: number }>;
 }
 
 export type PostPayload = {
@@ -171,13 +172,13 @@ export type PostPayload = {
   slug: string;
   summary?: string;
   content: string;
-  media_id: number;
+  media_id: string;
   cover_image?: string | null;
   image_position: ImagePosition;
   status: PostStatus;
-  author_id: number;
-  category_id?: number | null;
-  tag_ids?: number[];
+  author_id: string;
+  category_id?: string | null;
+  tag_ids?: string[];
   published_at?: string | null;
   scheduled_at?: string | null;
 };

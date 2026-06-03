@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 import { validateStoredSession, type AuthUser } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 
 function LoadingState() {
   return (
@@ -51,7 +52,17 @@ export default function AdminAuthGate({ children }: { children: React.ReactNode 
     }
 
     checkSession();
-    return () => { active = false; };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT' && !isLoginPage) {
+        router.replace('/admin/login');
+      }
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, [isLoginPage, pathname, router]);
 
   if (checking && !user) return <LoadingState />;

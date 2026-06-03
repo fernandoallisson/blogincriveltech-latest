@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import AdminPageShell from '@/components/AdminPageShell';
@@ -24,12 +24,12 @@ export default function AdminCommentsPage() {
 
   const postById = useMemo(() => new Map(posts.map((post) => [post.id, post])), [posts]);
   const postOptions = useMemo(() => {
-    const linkedPostIds = Array.from(new Set(items.map((item) => item.post_id))).sort((a, b) => a - b);
+    const linkedPostIds = Array.from(new Set(items.map((item) => item.post_id))).sort();
     return [
       { value: 'all', label: 'Todos os blogs' },
       ...linkedPostIds.map((postId) => {
         const post = postById.get(postId);
-        return { value: String(postId), label: post?.title || `Post #${postId}` };
+        return { value: postId, label: post?.title || `Post ${postId.slice(0, 8)}` };
       }),
     ];
   }, [items, postById]);
@@ -67,7 +67,7 @@ export default function AdminCommentsPage() {
                 </div>
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-normal text-subtle">Blog vinculado</div>
-                  <div className="mt-1 line-clamp-2 text-sm font-semibold text-text">{linkedPost?.title || `Post #${item.post_id}`}</div>
+                  <div className="mt-1 line-clamp-2 text-sm font-semibold text-text">{linkedPost?.title || `Post ${item.post_id.slice(0, 8)}`}</div>
                   {linkedPost?.slug && <div className="mt-1 text-xs text-subtle">/{linkedPost.slug}</div>}
                 </div>
                 <Select size="sm" value={item.status} onChange={async (e) => { await updateComment(item.id, { status: e.target.value as ApiComment['status'] }); await load(); }} options={[{ value: 'pending', label: 'Pendente' }, { value: 'approved', label: 'Aprovado' }, { value: 'rejected', label: 'Rejeitado' }]} />

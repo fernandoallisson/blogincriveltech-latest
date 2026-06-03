@@ -1,74 +1,63 @@
-﻿'use client';
+'use client';
 
-import { API_URL, login, type ApiAuthResponse } from '@/lib/api';
-
-const TOKEN_KEY = 'blog-incrivel-admin-token';
-const USER_KEY = 'blog-incrivel-admin-user';
+import { supabase } from '@/lib/supabase';
 
 export type AuthUser = {
-  id: number;
+  id: string;
   email: string;
   role: string;
   name?: string;
 };
 
-export function getStoredToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem(TOKEN_KEY);
-}
-
-export function getStoredUser(): AuthUser | null {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(USER_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as AuthUser;
-  } catch {
-    return null;
-  }
-}
-
-export function saveAuthSession(auth: ApiAuthResponse) {
-  window.localStorage.setItem(TOKEN_KEY, auth.token);
-  window.localStorage.setItem(USER_KEY, JSON.stringify(auth.user));
-}
-
-export function clearAuthSession() {
-  if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(TOKEN_KEY);
-  window.localStorage.removeItem(USER_KEY);
-}
-
 export async function signIn(email: string, password: string): Promise<AuthUser> {
-  const auth = await login(email, password);
-  saveAuthSession(auth);
-  return auth.user;
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw new Error('Credenciais inválidas');
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('name, role')
+    .eq('id', data.user.id)
+    .maybeSingle();
+
+  return {
+    id: data.user.id,
+    email: data.user.email!,
+    role: profile?.role ?? 'user',
+    name: profile?.name ?? '',
+  };
 }
 
-export async function fetchCurrentUser(token = getStoredToken()): Promise<AuthUser> {
-  if (!token) throw new Error('Sessão não encontrada');
-  const res = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw new Error('Sessão expirada');
-  const data = (await res.json()) as { user: AuthUser };
-  return data.user;
+export async function signOut() {
+  await supabase.auth.signOut();
 }
 
 export async function validateStoredSession(): Promise<AuthUser | null> {
-  const token = getStoredToken();
-  if (!token) return null;
-  try {
-    const user = await fetchCurrentUser(token);
-    const storedUser = getStoredUser();
-    const mergedUser = { ...user, name: storedUser?.name ?? user.name };
-    window.localStorage.setItem(USER_KEY, JSON.stringify(mergedUser));
-    return mergedUser;
-  } catch {
-    clearAuthSession();
-    return null;
-  }
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return null;
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('name, role')
+    .eq('id', session.user.id)
+    .maybeSingle();
+
+  return {
+    id: session.user.id,
+    email: session.user.email!,
+    role: profile?.role ?? 'user',
+    name: profile?.name ?? '',
+  };
 }
 
-export function getAuthHeaders(): HeadersInit {
-  const token = getStoredToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+// Legacy stubs kept for backwards compatibility with any remaining callers
+export function getStoredToken(): string | null { return null; }
+export function getStoredUser(): AuthUser | null { return null; }
+export function saveAuthSession(_auth: unknown) {}
+export function clearAuthSession() { supabase.auth.signOut(); }
+export function getAuthHeaders(): HeadersInit { return {}; }
+
+export async function fetchCurrentUser(): Promise<AuthUser> {
+  const user = await validateStoredSession();
+  if (!user) throw new Error('Sessão não encontrada');
+  return user;
 }

@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import { createCategory, createPost, createTag, deletePost, fetchCategories, fetchMedia, fetchPosts, fetchTags, fetchUsers, updatePost, uploadMedia, type ApiCategory, type ApiMedia, type ApiPost, type ApiTag, type ApiUser, type PostPayload } from '@/lib/api';
-import { getStoredUser } from '@/lib/auth';
+import { validateStoredSession } from '@/lib/auth';
 import { compressUploadImage } from '@/lib/imageCompression';
 import { AdminGrid } from '../shared/AdminGrid';
 import { slugify } from '../shared/slugify';
@@ -21,9 +21,9 @@ export default function AdminPostsView() {
   const [tags, setTags] = useState<ApiTag[]>([]);
   const [media, setMedia] = useState<ApiMedia[]>([]);
   const [users, setUsers] = useState<ApiUser[]>([]);
-  const [currentUser, setCurrentUser] = useState(getStoredUser());
+  const [currentUser, setCurrentUser] = useState<ReturnType<typeof validateStoredSession> extends Promise<infer T> ? T : never>(null);
   const [form, setForm] = useState<PostFormState>(emptyPostForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [modal, setModal] = useState<'category' | 'media' | 'tag' | null>(null);
   const [modalMessage, setModalMessage] = useState('');
@@ -35,25 +35,25 @@ export default function AdminPostsView() {
   const [isSavingMedia, setIsSavingMedia] = useState(false);
 
   async function load() {
-    const storedUser = getStoredUser();
+    const storedUser = await validateStoredSession();
     setCurrentUser(storedUser);
     const [p, c, t, m, u] = await Promise.all([fetchPosts(), fetchCategories(), fetchTags(), fetchMedia(), fetchUsers().catch(() => [])]);
-    const authorId = storedUser?.role === 'admin' ? (u[0]?.id || storedUser?.id || 1) : (storedUser?.id || 1);
+    const authorId = storedUser?.id ?? '';
     setPosts(p);
     setCategories(c);
     setTags(t);
     setMedia(m);
-    setUsers(u.length ? u : [{ id: authorId, name: `Usuário #${authorId}` } as ApiUser]);
+    setUsers(u.length ? u : [{ id: authorId, name: storedUser?.name ?? 'Usuário' } as ApiUser]);
     setForm((current) => ({ ...current, author_id: authorId }));
   }
 
   useEffect(() => { load(); }, []);
 
   const availableMedia = useMemo(() => media.filter((item) => !item.post_id || item.post_id === editingId), [editingId, media]);
-  const selectedMedia = media.find((item) => String(item.id) === form.media_id);
-  const selectedCategory = categories.find((item) => String(item.id) === form.category_id);
-  const selectedTags = tags.filter((item) => form.tag_ids.includes(String(item.id)));
-  const selectedAuthor = users.find((item) => item.id === Number(form.author_id));
+  const selectedMedia = media.find((item) => item.id === form.media_id);
+  const selectedCategory = categories.find((item) => item.id === form.category_id);
+  const selectedTags = tags.filter((item) => form.tag_ids.includes(item.id));
+  const selectedAuthor = users.find((item) => item.id === form.author_id);
   const isAdmin = currentUser?.role === 'admin';
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
@@ -69,7 +69,7 @@ export default function AdminPostsView() {
       if (editingId) await updatePost(editingId, payload); else await createPost(payload);
       setMessage(editingId ? 'Post atualizado.' : 'Post criado.');
       setEditingId(null);
-      setForm({ ...emptyPostForm, author_id: isAdmin ? (users[0]?.id || currentUser?.id || 1) : (currentUser?.id || 1) });
+      setForm({ ...emptyPostForm, author_id: isAdmin ? (users[0]?.id || currentUser?.id || '') : (currentUser?.id || '') });
       await load();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Falha ao salvar.');
@@ -92,8 +92,8 @@ export default function AdminPostsView() {
       image_position: post.image_position || 'side',
       author_id: post.author_id,
       category_id: post.category_id ? String(post.category_id) : '',
-      tag_ids: post.tags?.map((tag) => String(tag.id)) || [],
-      media_id: linkedMedia ? String(linkedMedia.id) : '',
+      tag_ids: post.tags?.map((tag) => tag.id) || [],
+      media_id: linkedMedia ? linkedMedia.id : '',
     });
   }
 
@@ -114,7 +114,7 @@ export default function AdminPostsView() {
         description: categoryForm.description || undefined,
       });
       setCategories((current) => [item, ...current]);
-      setForm((current) => ({ ...current, category_id: String(item.id) }));
+      setForm((current) => ({ ...current, category_id: item.id }));
       setCategoryForm({ name: '', slug: '', description: '' });
       closeModal();
     } catch (error) {
@@ -128,7 +128,7 @@ export default function AdminPostsView() {
     try {
       const item = await createTag({ name: tagForm.name, slug: tagForm.slug || slugify(tagForm.name) });
       setTags((current) => [item, ...current]);
-      setForm((current) => ({ ...current, tag_ids: [...current.tag_ids, String(item.id)] }));
+      setForm((current) => ({ ...current, tag_ids: [...current.tag_ids, item.id] }));
       setTagForm({ name: '', slug: '' });
       closeModal();
     } catch (error) {
@@ -145,7 +145,7 @@ export default function AdminPostsView() {
       setIsSavingMedia(true);
       const item = await uploadMedia(mediaFile);
       setMedia((current) => [item, ...current]);
-      setForm((current) => ({ ...current, media_id: String(item.id) }));
+      setForm((current) => ({ ...current, media_id: item.id }));
       setMediaFile(null);
       closeModal();
     } catch (error) {
@@ -249,15 +249,15 @@ function buildPayload(form: PostFormState, coverImage: string | null): PostPaylo
     slug: form.slug || slugify(form.title),
     summary: form.summary,
     content: form.content,
-    media_id: Number(form.media_id),
+    media_id: form.media_id,
     cover_image: coverImage,
     image_position: form.image_position,
     status: form.status,
-    author_id: Number(form.author_id),
-    category_id: form.category_id ? Number(form.category_id) : null,
-    tag_ids: form.tag_ids.map(Number),
-    published_at: form.status === 'published' ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null,
-    scheduled_at: form.scheduled_at ? toUtcSqlDatetime(form.scheduled_at) : null,
+    author_id: form.author_id,
+    category_id: form.category_id || null,
+    tag_ids: form.tag_ids,
+    published_at: form.status === 'published' ? new Date().toISOString() : null,
+    scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
   };
 }
 

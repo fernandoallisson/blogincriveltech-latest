@@ -13,7 +13,7 @@ export default function AdminMediaView() {
   const [items, setItems] = useState<ApiMedia[]>([]);
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [form, setForm] = useState<MediaFormState>(emptyMediaForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,7 +29,7 @@ export default function AdminMediaView() {
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (isProcessingImage || isSaving) return;
-    const postId = form.post_id ? Number(form.post_id) : null;
+    const postId = form.post_id || null;
     const payload = {
       filename: form.filename,
       url: form.url,
@@ -92,7 +92,7 @@ export default function AdminMediaView() {
       url: item.url,
       type: item.type || '',
       size: item.size ? String(item.size) : '',
-      post_id: item.post_id ? String(item.post_id) : '',
+      post_id: item.post_id ?? '',
     });
   }
 

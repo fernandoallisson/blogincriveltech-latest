@@ -1,31 +1,48 @@
-﻿import { adminHeaders, API_URL, readJsonOrThrow } from './apiCore';
+import { supabase } from './supabase';
 import { type ApiSetting } from './apiTypes';
 
 export async function subscribeNewsletter(data: { email: string; name?: string }) {
-  const res = await fetch(`${API_URL}/newsletter`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, status: 'active' }) });
-  return readJsonOrThrow(res, 'Falha ao inscrever no newsletter');
+  const { error } = await supabase
+    .from('newsletter_subscribers')
+    .insert({ email: data.email, name: data.name ?? null, status: 'active' });
+  if (error) throw new Error('Falha ao inscrever no newsletter');
+  return { message: 'Inscrito com sucesso.' };
 }
 
 export async function fetchSettings(): Promise<ApiSetting[]> {
-  const res = await fetch(`${API_URL}/settings`, { headers: adminHeaders() });
-  return readJsonOrThrow<ApiSetting[]>(res, 'Falha ao buscar configurações');
+  const { data, error } = await supabase
+    .from('settings')
+    .select('*')
+    .order('key');
+  if (error) throw new Error('Falha ao buscar configurações');
+  return data ?? [];
 }
 
-export async function createSetting(data: { key: string; value: string }) {
-  const res = await fetch(`${API_URL}/settings`, { method: 'POST', headers: adminHeaders(), body: JSON.stringify(data) });
-  return readJsonOrThrow<ApiSetting>(res, 'Falha ao criar configuração');
+export async function createSetting(data: { key: string; value: string }): Promise<ApiSetting> {
+  const { data: row, error } = await supabase
+    .from('settings')
+    .insert(data)
+    .select()
+    .single();
+  if (error) throw new Error('Falha ao criar configuração');
+  return row;
 }
 
-export async function updateSetting(id: number | string, data: { key: string; value: string }) {
-  const res = await fetch(`${API_URL}/settings/${id}`, { method: 'PUT', headers: adminHeaders(), body: JSON.stringify(data) });
-  return readJsonOrThrow<{ message: string }>(res, 'Falha ao atualizar configuração');
+export async function updateSetting(id: string, data: { key: string; value: string }): Promise<{ message: string }> {
+  const { error } = await supabase
+    .from('settings')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw new Error('Falha ao atualizar configuração');
+  return { message: 'Configuração atualizada.' };
 }
 
-export async function deleteSetting(id: number | string) {
-  const res = await fetch(`${API_URL}/settings/${id}`, { method: 'DELETE', headers: adminHeaders() });
-  return readJsonOrThrow<{ message: string }>(res, 'Falha ao deletar configuração');
+export async function deleteSetting(id: string): Promise<{ message: string }> {
+  const { error } = await supabase.from('settings').delete().eq('id', id);
+  if (error) throw new Error('Falha ao deletar configuração');
+  return { message: 'Configuração removida.' };
 }
 
 export function getSettingValue(settings: ApiSetting[], key: string): string | undefined {
-  return settings.find((setting) => setting.key === key)?.value;
+  return settings.find((s) => s.key === key)?.value;
 }

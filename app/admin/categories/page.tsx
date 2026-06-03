@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import AdminPageShell from '@/components/AdminPageShell';
@@ -7,17 +7,17 @@ import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import { createCategory, deleteCategory, fetchCategories, updateCategory, type ApiCategory } from '@/lib/api';
-import { getStoredUser } from '@/lib/auth';
+import { validateStoredSession } from '@/lib/auth';
 import { AdminGrid, AdminRow } from '@/features/admin/shared/AdminGrid';
 import { slugify } from '@/features/admin/shared/slugify';
 
 export default function AdminCategoriesPage() {
   const [items, setItems] = useState<ApiCategory[]>([]);
   const [form, setForm] = useState({ name: '', slug: '', description: '' });
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   async function load() { setItems(await fetchCategories()); }
-  useEffect(() => { setIsAdmin(getStoredUser()?.role === 'admin'); load(); }, []);
+  useEffect(() => { validateStoredSession().then((u) => setIsAdmin(u?.role === 'admin')); load(); }, []);
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const payload = { name: form.name, slug: form.slug || slugify(form.name), description: form.description || null };

@@ -1,27 +1,47 @@
-﻿import { adminHeaders, API_URL, readJsonOrThrow } from './apiCore';
+import { supabase } from './supabase';
 import { type ApiComment } from './apiTypes';
 
 export async function fetchComments(): Promise<ApiComment[]> {
-  const res = await fetch(`${API_URL}/comments`);
-  return readJsonOrThrow<ApiComment[]>(res, 'Falha ao buscar comentários');
+  const { data, error } = await supabase
+    .from('comments')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error('Falha ao buscar comentários');
+  return data ?? [];
 }
 
-export async function fetchCommentsByPost(postId: number | string): Promise<ApiComment[]> {
-  const all = await fetchComments();
-  return all.filter((comment) => comment.post_id === Number(postId) && comment.status === 'approved');
+export async function fetchCommentsByPost(postId: string): Promise<ApiComment[]> {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('*')
+    .eq('post_id', postId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: true });
+  if (error) throw new Error('Falha ao buscar comentários');
+  return data ?? [];
 }
 
-export async function createComment(data: { post_id: number; name: string; email: string; content: string }) {
-  const res = await fetch(`${API_URL}/comments`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-  return readJsonOrThrow(res, 'Falha ao enviar comentário');
+export async function createComment(data: { post_id: string; name: string; email: string; content: string }) {
+  const { data: row, error } = await supabase
+    .from('comments')
+    .insert({ ...data, status: 'pending' })
+    .select()
+    .single();
+  if (error) throw new Error('Falha ao enviar comentário');
+  return row;
 }
 
-export async function updateComment(id: number | string, data: Partial<ApiComment>) {
-  const res = await fetch(`${API_URL}/comments/${id}`, { method: 'PUT', headers: adminHeaders(), body: JSON.stringify(data) });
-  return readJsonOrThrow<{ message: string }>(res, 'Falha ao atualizar comentário');
+export async function updateComment(id: string, data: Partial<ApiComment>): Promise<{ message: string }> {
+  const { error } = await supabase
+    .from('comments')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw new Error('Falha ao atualizar comentário');
+  return { message: 'Comentário atualizado.' };
 }
 
-export async function deleteComment(id: number | string) {
-  const res = await fetch(`${API_URL}/comments/${id}`, { method: 'DELETE', headers: adminHeaders() });
-  return readJsonOrThrow<{ message: string }>(res, 'Falha ao deletar comentário');
+export async function deleteComment(id: string): Promise<{ message: string }> {
+  const { error } = await supabase.from('comments').delete().eq('id', id);
+  if (error) throw new Error('Falha ao deletar comentário');
+  return { message: 'Comentário removido.' };
 }

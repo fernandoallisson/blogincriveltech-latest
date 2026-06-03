@@ -57,7 +57,7 @@ export default function PostForm({ form, editing, message, media, categories, ta
           <Select value={form.category_id} onChange={(e) => onChange({ ...form, category_id: e.target.value })} options={[{ value: '', label: categories.length ? 'Sem categoria' : 'Nenhuma categoria disponível' }, ...categories.map((c) => ({ value: String(c.id), label: c.name }))]} />
         </FieldWithAction>
         <TagPicker tags={tags} selectedIds={form.tag_ids} onCreateTag={onCreateTag} onChange={(tagIds) => onChange({ ...form, tag_ids: tagIds })} />
-        {canChooseAuthor && <Select label="Autor" value={String(form.author_id)} onChange={(e) => onChange({ ...form, author_id: Number(e.target.value) })} options={users.map((u) => ({ value: String(u.id), label: u.name }))} />}
+        {canChooseAuthor && <Select label="Autor" value={form.author_id} onChange={(e) => onChange({ ...form, author_id: e.target.value })} options={users.map((u) => ({ value: u.id, label: u.name }))} />}
         {message && <div className={`text-xs ${message.includes('Falha') || message.includes('Escolha') ? 'text-error' : 'text-success'}`}>{message}</div>}
         <Button type="submit" full disabled={isSaving || !form.title || !form.content || !form.media_id}>{isSaving ? 'Salvando...' : 'Salvar'}</Button>
       </form>

@@ -12,7 +12,7 @@ import { slugify } from '@/features/admin/shared/slugify';
 export default function AdminTagsPage() {
   const [items, setItems] = useState<ApiTag[]>([]);
   const [form, setForm] = useState({ name: '', slug: '' });
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   async function load() { setItems(await fetchTags()); }
   useEffect(() => { load(); }, []);
   async function save(e: React.FormEvent<HTMLFormElement>) {

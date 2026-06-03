@@ -8,7 +8,7 @@ export type PostFormState = {
   status: PostPayload['status'];
   scheduled_at: string;
   image_position: ImagePosition;
-  author_id: number;
+  author_id: string;
   category_id: string;
   tag_ids: string[];
   media_id: string;
@@ -22,7 +22,7 @@ export const emptyPostForm: PostFormState = {
   status: 'draft',
   scheduled_at: '',
   image_position: 'side',
-  author_id: 1,
+  author_id: '',
   category_id: '',
   tag_ids: [],
   media_id: '',
