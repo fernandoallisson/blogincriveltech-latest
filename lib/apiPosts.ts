@@ -1,6 +1,15 @@
 import { supabase } from './supabase';
 import { type ApiPost, type ApiTag, type PostPayload } from './apiTypes';
 
+function extractCount(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (Array.isArray(value) && value.length > 0) {
+    const first = value[0] as Record<string, unknown>;
+    return typeof first?.count === 'number' ? first.count : 0;
+  }
+  return 0;
+}
+
 function mapPost(row: Record<string, unknown>): ApiPost {
   const author = row.author as { name?: string } | null;
   const category = row.category as { name?: string; slug?: string } | null;
@@ -27,8 +36,8 @@ function mapPost(row: Record<string, unknown>): ApiPost {
     published_at: row.published_at as string | null,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
-    views: row.views_count as number | undefined,
-    likes: row.likes_count as number | undefined,
+    views: extractCount(row.views_count),
+    likes: extractCount(row.likes_count),
     tags: tags.map((t) => t.tags),
   };
 }
