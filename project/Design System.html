@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Design System · Blog Incrível Tech</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  #root { min-height: 100vh; }
+  ::selection { background: var(--brand-soft); color: var(--text); }
+  /* Slim scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-subtle); background-clip: content-box; border: 2px solid transparent; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="tokens.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="artboards.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "mode": "dark",
+  "accent": "#5dd6da",
+  "fontFamily": "Plus Jakarta Sans",
+  "radiusScale": 1.1,
+  "glassOpacity": 0.05
+}/*EDITMODE-END*/;
+
+function ThemeWrap({ children }) {
+  // Apply CSS vars on document.documentElement so they leak into all artboards
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  React.useEffect(() => {
+    const vars = themeVars(t.mode, t.accent, t.radiusScale, t.glassOpacity);
+    Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+    document.documentElement.style.setProperty('--font-sans', `"${t.fontFamily}", ui-sans-serif, system-ui, sans-serif`);
+    document.body.style.fontFamily = `"${t.fontFamily}", ui-sans-serif, system-ui, sans-serif`;
+    document.body.style.background = vars['--bg'];
+    document.body.style.color = vars['--text'];
+  }, [t.mode, t.accent, t.fontFamily, t.radiusScale, t.glassOpacity]);
+
+  return (
+    <>
+      {children}
+      <TweaksPanel>
+        <TweakSection label="Tema"/>
+        <TweakRadio label="Modo" value={t.mode} options={['dark','light']} onChange={v => setTweak('mode', v)}/>
+        <TweakColor label="Cor de destaque" value={t.accent} onChange={v => setTweak('accent', v)}/>
+        <TweakSection label="Tipografia"/>
+        <TweakSelect label="Família" value={t.fontFamily}
+          options={['Plus Jakarta Sans','Manrope','Geist','Inter','JetBrains Mono']}
+          onChange={v => setTweak('fontFamily', v)}/>
+        <TweakSection label="Forma"/>
+        <TweakSlider label="Raio (escala)" value={t.radiusScale} min={0} max={2} step={0.1}
+          onChange={v => setTweak('radiusScale', v)}/>
+        <TweakSlider label="Glass opacity" value={t.glassOpacity} min={0.02} max={0.20} step={0.01}
+          onChange={v => setTweak('glassOpacity', v)}/>
+      </TweaksPanel>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <ThemeWrap>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
+        <DesignCanvas>
+
+          {/* ─── INTRO ─────────────────────────────── */}
+          <DCSection id="intro" title="Blog Incrível Tech · Design System" subtitle="Direção visual completa: tokens, componentes, layouts do blog, painel admin e theming. Use Tweaks (canto inferior direito) para alternar modo, cor de destaque, tipografia e raio.">
+            <DCArtboard id="cover" label="Capa" width={1200} height={520} style={{ background: 'var(--bg-gradient)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', padding: 56, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: -120, right: -120, width: 480, height: 480, borderRadius: 999, background: 'radial-gradient(circle, var(--brand) 0%, transparent 60%)', opacity: 0.25, filter: 'blur(40px)' }}/>
+                <div style={{ position: 'absolute', bottom: -80, left: -100, width: 360, height: 360, borderRadius: 999, background: 'radial-gradient(circle, var(--brand-2) 0%, transparent 65%)', opacity: 0.18, filter: 'blur(40px)' }}/>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Logo size={32}/>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Badge tone="brand" soft dot>v1.0 · Abril 2026</Badge>
+                    <Badge tone="neutral" soft icon="sparkle">Original — não-comercial</Badge>
+                  </div>
+                </div>
+                <div style={{ position: 'relative', maxWidth: 920 }}>
+                  <div style={{ fontSize: 15, color: 'var(--brand)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 18 }}>Design System · Blog</div>
+                  <div style={{ fontSize: 84, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.95, color: 'var(--text)' }}>
+                    Tecnologia,<br/>legalidade,<br/><span style={{ color: 'var(--brand)' }}>velocidade.</span>
+                  </div>
+                  <div style={{ fontSize: 18, color: 'var(--text-muted)', marginTop: 24, maxWidth: 620, lineHeight: 1.5 }}>
+                    Sistema visual completo para o Blog Incrível Tech — tokens, componentes, layouts editoriais e painel administrativo com theming ao vivo.
+                  </div>
+                </div>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 24, fontSize: 12, color: 'var(--text-subtle)', fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  <span>01 · TOKENS</span>
+                  <span>02 · COMPONENTES</span>
+                  <span>03 · LAYOUTS</span>
+                  <span>04 · ADMIN</span>
+                  <span>05 · THEMING</span>
+                </div>
+              </div>
+            </DCArtboard>
+          </DCSection>
+
+          {/* ─── TOKENS ────────────────────────────── */}
+          <DCSection id="tokens" title="01 · Tokens" subtitle="Cores, tipografia, espaçamento, raios e sombras.">
+            <DCArtboard id="colors" label="Cores"     width={920} height={780} style={{ background: 'var(--bg)' }}><ColorPalette/></DCArtboard>
+            <DCArtboard id="type"   label="Tipografia"width={820} height={780} style={{ background: 'var(--bg)' }}><TypeScale/></DCArtboard>
+            <DCArtboard id="space"  label="Espaço & Forma" width={820} height={620} style={{ background: 'var(--bg)' }}><SpacingShadows/></DCArtboard>
+          </DCSection>
+
+          {/* ─── COMPONENTS ────────────────────────── */}
+          <DCSection id="components" title="02 · Componentes base" subtitle="Botões, formulários, badges, tags, cards de post, navegação e modais.">
+            <DCArtboard id="buttons" label="Buttons & IconButtons" width={720} height={460} style={{ background: 'var(--bg)' }}><ButtonsShowcase/></DCArtboard>
+            <DCArtboard id="forms"   label="Inputs & Forms"        width={620} height={680} style={{ background: 'var(--bg)' }}><FormsShowcase/></DCArtboard>
+            <DCArtboard id="badges"  label="Badges, Tags & Toasts" width={780} height={480} style={{ background: 'var(--bg)' }}><BadgesTagsShowcase/></DCArtboard>
+            <DCArtboard id="cards"   label="Cards de post"          width={900} height={920} style={{ background: 'var(--bg)' }}><PostCardsShowcase/></DCArtboard>
+            <DCArtboard id="nav"     label="Navegação"              width={1000} height={680} style={{ background: 'var(--bg)' }}><NavShowcase/></DCArtboard>
+            <DCArtboard id="modals"  label="Modais"                 width={840} height={460} style={{ background: 'var(--bg)' }}><ModalShowcase/></DCArtboard>
+          </DCSection>
+
+          {/* ─── BLOG LAYOUTS ──────────────────────── */}
+          <DCSection id="blog" title="03 · Layouts do Blog" subtitle="Home, post individual e categoria/busca.">
+            <DCArtboard id="home"     label="Home"             width={1280} height={1280}><BlogHome/></DCArtboard>
+            <DCArtboard id="post"     label="Post individual"  width={1280} height={1280}><BlogPost/></DCArtboard>
+            <DCArtboard id="category" label="Categoria + Busca"width={1280} height={1280}><BlogCategory/></DCArtboard>
+          </DCSection>
+
+          {/* ─── ADMIN ─────────────────────────────── */}
+          <DCSection id="admin" title="04 · Painel Administrativo" subtitle="Dashboard, lista de posts, editor e personalização visual.">
+            <DCArtboard id="dashboard" label="Dashboard"        width={1280} height={780}><AdminDashboard/></DCArtboard>
+            <DCArtboard id="posts"     label="Lista de posts"   width={1280} height={780}><AdminPostsList/></DCArtboard>
+            <DCArtboard id="editor"    label="Editor de post"   width={1280} height={840}><AdminEditor/></DCArtboard>
+            <DCArtboard id="theming"   label="Aparência (theming)" width={1280} height={840}><AdminTheming/></DCArtboard>
+          </DCSection>
+
+        </DesignCanvas>
+      </div>
+    </ThemeWrap>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
