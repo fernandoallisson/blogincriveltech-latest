@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { type FormEvent, type ReactNode, useState } from 'react';
 import Icon from '@/components/Icon';

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Icon from '@/components/Icon';
 

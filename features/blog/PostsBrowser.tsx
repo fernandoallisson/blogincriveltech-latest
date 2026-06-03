@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
