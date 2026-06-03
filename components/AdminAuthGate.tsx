@@ -21,7 +21,7 @@ export default function AdminAuthGate({ children }: { children: React.ReactNode 
   const router = useRouter();
   const pathname = usePathname();
   const isLoginPage = pathname === '/admin/login';
-  const [checking, setChecking] = useState(!isLoginPage);
+  const [checking, setChecking] = useState(true);
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
@@ -33,22 +33,27 @@ export default function AdminAuthGate({ children }: { children: React.ReactNode 
         return;
       }
 
-      setChecking(true);
-      const currentUser = await validateStoredSession();
-      if (!active) return;
+      try {
+        const currentUser = await validateStoredSession();
+        if (!active) return;
 
-      if (!currentUser) {
-        router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
-        return;
+        if (!currentUser) {
+          router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
+          return;
+        }
+
+        if (!canAccessAdminPath(currentUser, pathname)) {
+          router.replace('/admin/dashboard');
+          return;
+        }
+
+        setUser(currentUser);
+      } catch {
+        if (!active) return;
+        router.replace('/admin/login');
+      } finally {
+        if (active) setChecking(false);
       }
-
-      if (!canAccessAdminPath(currentUser, pathname)) {
-        router.replace('/admin/dashboard');
-        return;
-      }
-
-      setUser(currentUser);
-      setChecking(false);
     }
 
     checkSession();
@@ -65,7 +70,8 @@ export default function AdminAuthGate({ children }: { children: React.ReactNode 
     };
   }, [isLoginPage, pathname, router]);
 
-  if (checking && !user) return <LoadingState />;
+  if (checking) return <LoadingState />;
+  if (!isLoginPage && !user) return <LoadingState />;
   return <>{children}</>;
 }
 

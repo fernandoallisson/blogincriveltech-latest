@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import { createCategory, createPost, createTag, deletePost, fetchCategories, fetchMedia, fetchPosts, fetchTags, fetchUsers, updatePost, uploadMedia, type ApiCategory, type ApiMedia, type ApiPost, type ApiTag, type ApiUser, type PostPayload } from '@/lib/api';
-import { validateStoredSession } from '@/lib/auth';
+import { validateStoredSession, type AuthUser } from '@/lib/auth';
 import { compressUploadImage } from '@/lib/imageCompression';
 import { AdminGrid } from '../shared/AdminGrid';
 import { slugify } from '../shared/slugify';
@@ -21,7 +21,7 @@ export default function AdminPostsView() {
   const [tags, setTags] = useState<ApiTag[]>([]);
   const [media, setMedia] = useState<ApiMedia[]>([]);
   const [users, setUsers] = useState<ApiUser[]>([]);
-  const [currentUser, setCurrentUser] = useState<ReturnType<typeof validateStoredSession> extends Promise<infer T> ? T : never>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [form, setForm] = useState<PostFormState>(emptyPostForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');

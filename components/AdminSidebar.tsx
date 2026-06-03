@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { clearAuthSession, getStoredUser, type AuthUser } from '@/lib/auth';
+import { validateStoredSession, type AuthUser } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import Logo from './Logo';
 import Icon from './Icon';
 import Avatar from './ui/Avatar';
@@ -46,11 +47,11 @@ export default function AdminSidebar({ active = 'dashboard' }: AdminSidebarProps
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
-    setUser(getStoredUser());
+    validateStoredSession().then((u) => setUser(u));
   }, []);
 
-  function handleLogout() {
-    clearAuthSession();
+  async function handleLogout() {
+    await supabase.auth.signOut();
     router.replace('/admin/login');
   }
 

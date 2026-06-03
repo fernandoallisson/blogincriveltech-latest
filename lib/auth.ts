@@ -32,24 +32,28 @@ export async function signOut() {
 }
 
 export async function validateStoredSession(): Promise<AuthUser | null> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return null;
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session) return null;
 
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('name, role')
-    .eq('id', session.user.id)
-    .maybeSingle();
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('name, role')
+      .eq('id', session.user.id)
+      .maybeSingle();
 
-  return {
-    id: session.user.id,
-    email: session.user.email!,
-    role: profile?.role ?? 'user',
-    name: profile?.name ?? '',
-  };
+    return {
+      id: session.user.id,
+      email: session.user.email!,
+      role: profile?.role ?? 'user',
+      name: profile?.name ?? '',
+    };
+  } catch {
+    return null;
+  }
 }
 
-// Legacy stubs kept for backwards compatibility with any remaining callers
+// Legacy stubs
 export function getStoredToken(): string | null { return null; }
 export function getStoredUser(): AuthUser | null { return null; }
 export function saveAuthSession(_auth: unknown) {}
