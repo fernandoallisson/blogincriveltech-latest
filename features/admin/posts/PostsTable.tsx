@@ -12,7 +12,7 @@ export default function PostsTable({ posts, user, onEdit, onDelete }: { posts: A
   return (
     <Card padding={0} className="overflow-hidden">
       {posts.map((post) => {
-        const canManage = user?.role === 'admin' || Number(post.author_id) === Number(user?.id);
+        const canManage = user?.role === 'admin' || post.author_id === user?.id;
         return (
         <AdminRow key={post.id} className="md:grid-cols-[minmax(0,1fr)_110px_150px]">
           <Link href={`/blog/${post.slug}`}>
