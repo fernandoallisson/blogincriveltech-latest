@@ -8,13 +8,30 @@ import { type ApiPost } from '@/lib/api';
 import { type AuthUser } from '@/lib/auth';
 import { AdminRow } from '../shared/AdminGrid';
 
+const STATUS_LABELS: Record<string, string> = {
+  published: 'Publicado',
+  draft: 'Rascunho',
+  scheduled: 'Agendado',
+  archived: 'Arquivado',
+};
+
+function formatScheduledDate(iso: string) {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function PostsTable({ posts, user, onEdit, onDelete }: { posts: ApiPost[]; user: AuthUser | null; onEdit: (post: ApiPost) => void; onDelete: (post: ApiPost) => void }) {
   return (
     <Card padding={0} className="overflow-hidden">
       {posts.map((post) => {
         const canManage = user?.role === 'admin' || post.author_id === user?.id;
         return (
-        <AdminRow key={post.id} className="md:grid-cols-[minmax(0,1fr)_110px_150px]">
+        <AdminRow key={post.id} className="md:grid-cols-[minmax(0,1fr)_130px_150px]">
           <Link href={`/blog/${post.slug}`}>
             <div className="font-extrabold text-text">{post.title}</div>
             <div className="text-xs text-subtle">{post.media_filename || 'Sem mídia vinculada'} | {post.views || 0} views</div>
@@ -24,7 +41,16 @@ export default function PostsTable({ posts, user, onEdit, onDelete }: { posts: A
               </div>
             )}
           </Link>
-          <Badge tone={post.status === 'published' ? 'success' : post.status === 'archived' ? 'error' : post.status === 'scheduled' ? 'info' : 'warning'} size="sm">{post.status}</Badge>
+          <div className="flex flex-col gap-1">
+            <Badge tone={post.status === 'published' ? 'success' : post.status === 'archived' ? 'error' : post.status === 'scheduled' ? 'info' : 'warning'} size="sm">
+              {STATUS_LABELS[post.status] ?? post.status}
+            </Badge>
+            {post.status === 'scheduled' && post.scheduled_at && (
+              <span className="text-[10px] leading-tight text-subtle">
+                Vai ao ar: {formatScheduledDate(post.scheduled_at)}
+              </span>
+            )}
+          </div>
           <div className="flex gap-1.5 md:justify-end">
             {canManage ? (
               <>

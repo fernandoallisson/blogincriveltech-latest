@@ -61,7 +61,7 @@ export default function AdminCommentsPage() {
             return (
               <AdminRow key={item.id} className="md:grid-cols-[minmax(0,1fr)_240px_150px_90px]">
                 <div>
-                  <Badge tone={item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'error' : 'warning'} size="sm">{item.status}</Badge>
+                  <Badge tone={item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'error' : 'warning'} size="sm">{item.status === 'approved' ? 'Aprovado' : item.status === 'rejected' ? 'Rejeitado' : 'Pendente'}</Badge>
                   <div className="mt-2 text-text">{item.content}</div>
                   <div className="text-xs text-subtle">{item.name} | {item.email}</div>
                 </div>

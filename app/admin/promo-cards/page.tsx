@@ -292,7 +292,7 @@ function PostPicker({ posts, selectedIds, onChange }: { posts: ApiPost[]; select
             <label key={post.id} className="flex min-w-0 cursor-pointer items-center gap-2 rounded-md border border-border bg-surface/40 px-2.5 py-2 text-sm text-text">
               <input type="checkbox" checked={selectedIds.includes(postId)} onChange={() => toggle(postId)} className="shrink-0" />
               <span className="min-w-0 flex-1 truncate">{post.title}</span>
-              <span className="shrink-0 text-[11px] text-subtle">{post.status}</span>
+              <span className="shrink-0 text-[11px] text-subtle">{{ published: 'Publicado', draft: 'Rascunho', scheduled: 'Agendado', archived: 'Arquivado' }[post.status] ?? post.status}</span>
             </label>
           );
         })}
