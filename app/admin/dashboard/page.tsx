@@ -310,7 +310,7 @@ function formatDate(value: string) {
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
     published: 'Publicado',
-    scheduled: 'Programado',
+    scheduled: 'Agendado',
     draft: 'Rascunho',
     archived: 'Arquivado',
   };

@@ -45,7 +45,7 @@ export default function PostForm({ form, editing, message, media, categories, ta
         <Select label="Status" value={form.status} onChange={(e) => {
           const status = e.target.value as PostPayload['status'];
           onChange({ ...form, status, scheduled_at: status === 'scheduled' ? form.scheduled_at : '' });
-        }} options={[{ value: 'draft', label: 'Rascunho' }, { value: 'scheduled', label: 'Programado' }, { value: 'published', label: 'Publicado' }, { value: 'archived', label: 'Arquivado' }]} />
+        }} options={[{ value: 'draft', label: 'Rascunho' }, { value: 'scheduled', label: 'Agendado' }, { value: 'published', label: 'Publicado' }, { value: 'archived', label: 'Arquivado' }]} />
         <Input
           label="Programar publicação"
           type="datetime-local"

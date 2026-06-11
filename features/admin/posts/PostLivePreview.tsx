@@ -65,7 +65,7 @@ export default function PostLivePreview({ form, media, categoryName, selectedTag
 
 const statusLabel: Record<PostFormState['status'], string> = {
   draft: 'Rascunho',
-  scheduled: 'Programado',
+  scheduled: 'Agendado',
   published: 'Publicado',
   archived: 'Arquivado',
 };
